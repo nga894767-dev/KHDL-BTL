@@ -1,19 +1,30 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 
-# Đọc dataset
-data = pd.read_csv("data/creditcard.csv")
+# =========================
+# ĐỌC FILE ĐÃ LÀM SẠCH
+# =========================
 
-# Input (dữ liệu để học)
+data = pd.read_csv(
+    "data/creditcard_clean.csv"
+)
+
+# =========================
+# INPUT / OUTPUT
+# =========================
+
 X = data.drop(columns=['Class'])
 
-# Output (đáp án)
 y = data['Class']
 
-# Chia dữ liệu train/test
+# =========================
+# CHIA TRAIN / TEST
+# =========================
+
 X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
@@ -21,35 +32,67 @@ X_train, X_test, y_train, y_test = train_test_split(
     random_state=42
 )
 
-# Tạo model AI
-model = DecisionTreeClassifier(max_depth=4)
+# =========================
+# TẠO MODEL AI
+# =========================
 
-# Train model
+model = DecisionTreeClassifier(
+    max_depth=4
+)
+
+# =========================
+# TRAIN MODEL
+# =========================
+
 model.fit(X_train, y_train)
 
-# Dự đoán
+# =========================
+# DỰ ĐOÁN
+# =========================
+
 y_pred = model.predict(X_test)
 
-# Tính accuracy
-acc = accuracy_score(y_test, y_pred)
+# =========================
+# ĐỘ CHÍNH XÁC
+# =========================
+
+acc = accuracy_score(
+    y_test,
+    y_pred
+)
+
+print("\n===== KẾT QUẢ =====")
 
 print("Accuracy:", acc)
-# Đếm số giao dịch gian lận
+
+# =========================
+# THỐNG KÊ
+# =========================
+
 fraud_count = data['Class'].sum()
 
-# Đếm tổng giao dịch
 total_transactions = len(data)
 
-print("Total Transactions:", total_transactions)
-print("Fraud Transactions:", fraud_count)
-import matplotlib.pyplot as plt
+normal_count = total_transactions - fraud_count
 
-# Vẽ biểu đồ
-# Chia dữ liệu
-normal = data[data['Class'] == 0]
-fraud = data[data['Class'] == 1]
+print("Tổng giao dịch:", total_transactions)
 
-# Vẽ giao dịch bình thường
+print("Giao dịch bình thường:", normal_count)
+
+print("Giao dịch gian lận:", fraud_count)
+
+# =========================
+# BIỂU ĐỒ
+# =========================
+
+normal = data[
+    data['Class'] == 0
+]
+
+fraud = data[
+    data['Class'] == 1
+]
+
 plt.scatter(
     normal['Time'],
     normal['Amount'],
@@ -57,7 +100,6 @@ plt.scatter(
     alpha=0.5
 )
 
-# Vẽ giao dịch bất thường
 plt.scatter(
     fraud['Time'],
     fraud['Amount'],
@@ -65,24 +107,14 @@ plt.scatter(
     alpha=0.8
 )
 
-# Tiêu đề và chú thích
 plt.xlabel("Time")
-plt.ylabel("Amount")
-plt.title("Fraud Detection in Accounting Transactions")
 
-# Hiện chú thích
+plt.ylabel("Amount")
+
+plt.title(
+    "Fraud Detection in Accounting Transactions"
+)
+
 plt.legend()
 
-# Hiện biểu đồ
-plt.show()
-
-
-# Tên trục
-plt.xlabel("Time")
-plt.ylabel("Amount")
-
-# Tiêu đề
-plt.title("Credit Card Fraud Detection")
-
-# Hiển thị biểu đồ
 plt.show()

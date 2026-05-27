@@ -13,6 +13,24 @@ st.write(
 )
 
 # =========================
+# SIDEBAR
+# =========================
+
+st.sidebar.header("⚙️ Bộ lọc dữ liệu")
+
+risk_filter = st.sidebar.selectbox(
+    "Chọn mức độ rủi ro",
+    ["Tất cả", "🔴 Cao", "🟠 Trung bình", "🟢 Thấp"]
+)
+
+amount_filter = st.sidebar.slider(
+    "Lọc giao dịch theo số tiền",
+    0,
+    10000,
+    1000
+)
+
+# =========================
 # UPLOAD FILE
 # =========================
 
@@ -29,12 +47,14 @@ if uploaded_file is not None:
 
     try:
 
-        # Nếu là CSV
+        # CSV
         if uploaded_file.name.endswith(".csv"):
+
             data = pd.read_csv(uploaded_file)
 
-        # Nếu là Excel
-        elif uploaded_file.name.endswith(".xlsx"):
+        # Excel
+        else:
+
             data = pd.read_excel(uploaded_file)
 
         # =========================
@@ -49,16 +69,24 @@ if uploaded_file is not None:
         # KIỂM TRA CỘT
         # =========================
 
-        required_columns = ['Time', 'Amount', 'Class']
+        required_columns = [
+            'Time',
+            'Amount',
+            'Class'
+        ]
 
         missing_columns = []
 
         for col in required_columns:
 
             if col not in data.columns:
+
                 missing_columns.append(col)
 
-        # Nếu thiếu cột
+        # =========================
+        # THIẾU CỘT
+        # =========================
+
         if len(missing_columns) > 0:
 
             st.error(
@@ -73,22 +101,27 @@ if uploaded_file is not None:
 
             fraud_count = data['Class'].sum()
 
-            normal_count = len(data) - fraud_count
-
             total_transactions = len(data)
+
+            normal_count = (
+                total_transactions
+                - fraud_count
+            )
 
             st.subheader("📊 Thống kê giao dịch")
 
-            st.success(
-                f"✅ Giao dịch bình thường: {normal_count}"
+            col1, col2, col3 = st.columns(3)
+
+            col1.success(
+                f"✅ Bình thường\n\n{normal_count}"
             )
 
-            st.error(
-                f"🚨 Giao dịch gian lận: {fraud_count}"
+            col2.error(
+                f"🚨 Gian lận\n\n{fraud_count}"
             )
 
-            st.info(
-                f"📌 Tổng số giao dịch: {total_transactions}"
+            col3.info(
+                f"📌 Tổng giao dịch\n\n{total_transactions}"
             )
 
             # =========================
@@ -100,7 +133,7 @@ if uploaded_file is not None:
             ].copy()
 
             # =========================
-            # PHÂN TÍCH LÝ DO
+            # PHÂN TÍCH RỦI RO
             # =========================
 
             reasons = []
@@ -113,40 +146,69 @@ if uploaded_file is not None:
 
                 score = 0
 
-                # Giao dịch lớn
-                if row['Amount'] > 1000:
-                    reason.append("💰 Số tiền lớn")
+                # Số tiền lớn
+                if row['Amount'] > amount_filter:
+
+                    reason.append(
+                        "💰 Số tiền lớn"
+                    )
+
                     score += 1
 
-                # Giao dịch thời gian bất thường
+                # Giao dịch đêm
                 if row['Time'] > 50000:
-                    reason.append("🌙 Giao dịch đêm")
+
+                    reason.append(
+                        "🌙 Giao dịch đêm"
+                    )
+
                     score += 1
 
                 # Mức độ rủi ro
                 if score >= 2:
+
                     risk = "🔴 Cao"
 
                 elif score == 1:
+
                     risk = "🟠 Trung bình"
 
                 else:
+
                     risk = "🟢 Thấp"
 
-                reasons.append(", ".join(reason))
+                reasons.append(
+                    ", ".join(reason)
+                )
 
                 risk_levels.append(risk)
 
             # =========================
-            # THÊM CỘT PHÂN TÍCH
+            # THÊM CỘT
             # =========================
 
-            suspicious['Mức độ rủi ro'] = risk_levels
+            suspicious[
+                'Mức độ rủi ro'
+            ] = risk_levels
 
-            suspicious['Lý do nghi ngờ'] = reasons
+            suspicious[
+                'Lý do nghi ngờ'
+            ] = reasons
 
             # =========================
-            # HIỂN THỊ GIAO DỊCH ĐÁNG NGỜ
+            # FILTER RISK
+            # =========================
+
+            if risk_filter != "Tất cả":
+
+                suspicious = suspicious[
+                    suspicious[
+                        'Mức độ rủi ro'
+                    ] == risk_filter
+                ]
+
+            # =========================
+            # HIỂN THỊ GIAO DỊCH
             # =========================
 
             st.subheader(
@@ -167,10 +229,12 @@ if uploaded_file is not None:
             )
 
             # =========================
-            # BIỂU ĐỒ
+            # BIỂU ĐỒ CỘT
             # =========================
 
-            st.subheader("📈 Biểu đồ phân bố giao dịch")
+            st.subheader(
+                "📈 Biểu đồ giao dịch"
+            )
 
             fig, ax = plt.subplots()
 
@@ -179,16 +243,58 @@ if uploaded_file is not None:
                 [normal_count, fraud_count]
             )
 
-            ax.set_ylabel("Số lượng")
+            ax.set_ylabel(
+                "Số lượng"
+            )
 
             ax.set_title(
-                "Phân bố giao dịch tài chính"
+                "Phân bố giao dịch"
             )
 
             st.pyplot(fig)
 
             # =========================
-            # GIAO DỊCH GIÁ TRỊ CAO
+            # BIỂU ĐỒ SCATTER
+            # =========================
+
+            st.subheader(
+                "📉 Phân bố giao dịch theo Time và Amount"
+            )
+
+            fig2, ax2 = plt.subplots()
+
+            normal = data[
+                data['Class'] == 0
+            ]
+
+            fraud = data[
+                data['Class'] == 1
+            ]
+
+            ax2.scatter(
+                normal['Time'],
+                normal['Amount'],
+                label='Normal',
+                alpha=0.5
+            )
+
+            ax2.scatter(
+                fraud['Time'],
+                fraud['Amount'],
+                label='Fraud',
+                alpha=0.8
+            )
+
+            ax2.set_xlabel("Time")
+
+            ax2.set_ylabel("Amount")
+
+            ax2.legend()
+
+            st.pyplot(fig2)
+
+            # =========================
+            # GIAO DỊCH GIÁ TRỊ LỚN
             # =========================
 
             st.subheader(
@@ -200,11 +306,34 @@ if uploaded_file is not None:
             ]
 
             st.dataframe(
+
                 high_amount[
-                    ['Time', 'Amount', 'Class']
+                    [
+                        'Time',
+                        'Amount',
+                        'Class'
+                    ]
                 ]
+
+            )
+
+            # =========================
+            # DOWNLOAD CSV
+            # =========================
+
+            csv = suspicious.to_csv(
+                index=False
+            ).encode('utf-8')
+
+            st.download_button(
+                "⬇️ Tải kết quả CSV",
+                csv,
+                "fraud_result.csv",
+                "text/csv"
             )
 
     except Exception as e:
 
-        st.error(f"❌ Lỗi xử lý file: {e}")
+        st.error(
+            f"❌ Lỗi xử lý file: {e}"
+        )
